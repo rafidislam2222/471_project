@@ -40,7 +40,12 @@ class AdminUserController extends Controller
             $user->status = 'active';
             $user->suspended_until = null;
         } elseif ($request->type === 'temporary') {
-            $days = $request->days ?? 7; // default 7 days
+
+            $days = $request->days; // default 7 days
+            if ($days==null||$days === '') {
+                $days=7;
+            }
+            $days = (int)$days;
             $user->status = 'suspended';
             $user->suspended_until = now()->addDays($days);
         } elseif ($request->type === 'permanent') {
