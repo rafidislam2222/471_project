@@ -26,6 +26,13 @@
         <option value="admin">Admin</option>
     </select><br><br>
 
+   
+    <input type='password' name="super key" placeholder="Super Key (for Admin only)">
+    <br>
+    @error('super_key')
+        <p style="color: red;">{{ $message }}</p>
+    @enderror
+    <br>    
     <button type="submit">Create Account</button>
 </form>
 

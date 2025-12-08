@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PropertyWebController;
+use App\Http\Controllers\AdminUserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,3 +51,32 @@ Route::get('/owner/properties/{id}/edit', [PropertyWebController::class, 'edit']
 Route::post('/owner/properties/{id}/update', [PropertyWebController::class, 'update']); // update
 
 Route::get('/owner/properties/{id}/delete', [PropertyWebController::class, 'destroy']); // delete
+/*
+|--------------------------------------------------------------------------
+| ADMIN USER MANAGEMENT (ONLY ADMIN)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'admin'])->group(function () {
+
+    // View all users
+    Route::get('/admin/users', [AdminUserController::class, 'index'])
+        ->name('admin.users.index');
+
+    // Update a user's role
+    Route::patch('/admin/users/{user}/role', [AdminUserController::class, 'updateRole'])
+        ->name('admin.users.updateRole');
+
+    // Suspend / unsuspend a user
+    Route::post('/admin/users/{user}/suspend', [AdminUserController::class, 'suspend'])
+        ->name('admin.users.suspend');
+
+    // Delete a user permanently
+    Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])
+        ->name('admin.users.destroy');
+    // View a user's profile    
+    Route::get('/admin/users/{user}/profile', [AdminUserController::class, 'showProfile'])
+    ->name('admin.users.profile');
+        
+
+});

@@ -121,6 +121,9 @@ return [
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
+        
     ],
+    //superkey
+    'super_admin_key'=>env('SUPER_ADMIN_KEY')
 
 ];

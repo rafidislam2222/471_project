@@ -24,6 +24,23 @@ class AuthController extends Controller
             'role'     => 'required|in:user,owner,admin'
         ]);
 
+
+        ///add superkey validation for admin role
+        $role=$request->role;
+        if ($role === 'admin') {
+            $superKeyFromForm = $request->input('super_key');
+            $expectedKey      = config('app.super_admin_key');
+
+            if (!$expectedKey || $superKeyFromForm !== $expectedKey) {
+                return back()
+                    ->withErrors([
+                        'super_key' => 'Invalid or missing super key for admin registration.'
+                    ])
+                    ->withInput();
+            }
+        }
+
+
         User::create([
             'name'     => $request->name,
             'email'    => $request->email,
@@ -48,6 +65,20 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
+//suspend if  the user is suspended not logged in
+        if ($user->status == 'suspended') {
+            $now = now();
+            if ($user->suspended_until && $now->lessThan($user->suspended_until)) {
+                $suspendUntil = $user->suspended_until->toDateTimeString();
+                Auth::logout();
+                return back()->with('error', "Your account is suspended until {$suspendUntil}.");
+            } else {
+                // Lift suspension
+                $user->status = 'active';
+                $user->suspended_until = null;
+                $user->save();
+            }
+        }
 
         // Redirect based on role
         if ($user->role == 'admin') {
