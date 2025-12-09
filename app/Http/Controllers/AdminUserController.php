@@ -7,11 +7,38 @@ use Illuminate\Http\Request;
 
 class AdminUserController extends Controller
 {
-    // 1️⃣ View all users
-    public function index()
+    // 1️⃣ View all users (with role filter + search)
+    public function index(Request $request)
     {
-        $users = User::all();
-        return view('admin.users.index', compact('users'));
+        // Read role filter from URL: ?role=admin / owner / user
+        $role = $request->query('role');
+
+        // Read search text: ?search=...
+        $search = $request->query('search');
+
+        $query = User::query();
+
+        // Filter by role, if valid
+        if (in_array($role, ['user', 'owner', 'admin'])) {
+            $query->where('role', $role);
+        }
+
+        // Filter by search, if provided
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%')
+                  ->orWhere('id', $search); // exact match for ID
+            });
+        }
+
+        $users = $query->get();
+
+        return view('admin.users.index', [
+            'users'       => $users,
+            'currentRole' => $role,
+            'search'      => $search,
+        ]);
     }
 
     // 2️⃣ Change user role
@@ -31,8 +58,8 @@ class AdminUserController extends Controller
     public function suspend(Request $request, User $user)
     {
         $request->validate([
-            'type'      => 'required|in:none,temporary,permanent',
-            'days'      => 'nullable|integer|min:1', // used for temporary
+            'type' => 'required|in:none,temporary,permanent',
+            'days' => 'nullable|integer|min:1', // used for temporary
         ]);
 
         if ($request->type === 'none') {
@@ -40,12 +67,12 @@ class AdminUserController extends Controller
             $user->status = 'active';
             $user->suspended_until = null;
         } elseif ($request->type === 'temporary') {
-
-            $days = $request->days; // default 7 days
-            if ($days==null||$days === '') {
-                $days=7;
+            $days = $request->days;
+            if ($days === null || $days === '') {
+                $days = 7; // default 7 days
             }
-            $days = (int)$days;
+            $days = (int) $days;
+
             $user->status = 'suspended';
             $user->suspended_until = now()->addDays($days);
         } elseif ($request->type === 'permanent') {
@@ -65,6 +92,7 @@ class AdminUserController extends Controller
 
         return back()->with('success', 'User account deleted.');
     }
+
     // 5️⃣ View user profile
     public function showProfile(User $user)
     {
