@@ -12,7 +12,15 @@
     <div class="topbar">
         <div class="topbar-title">User Management</div>
         <div class="topbar-right">
-            Admin User
+            <span style="font-weight: bold;">ADMIN</span>
+                
+        
+            <span style="margin: 0 10px; color: #ccc;">|</span>
+
+            <a href="{{ url('/logout') }}" 
+                style="color: red; text-decoration: none; font-weight: bold; font-size: 14px;">
+                Logout ➜
+            </a>
         </div>
     </div>
 

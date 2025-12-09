@@ -2,9 +2,17 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\PropertyWebController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\PropertyWebController;
 
+/*
+|--------------------------------------------------------------------------
+| Homepage Route (Fixes the 404 on load)
+|--------------------------------------------------------------------------
+*/
+Route::get('/', function () {
+    return redirect('/login'); // Redirects homepage to login
+});
 /*
 |--------------------------------------------------------------------------
 | Authentication Routes
@@ -26,7 +34,7 @@ Route::get('/logout', [AuthController::class, 'logout']);
 */
 
 Route::get('/admin/dashboard', function () {
-    return view('dashboard.admin');
+    return redirect('/admin/users');
 });
 
 Route::get('/owner/dashboard', function () {
@@ -77,6 +85,4 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // View a user's profile    
     Route::get('/admin/users/{user}/profile', [AdminUserController::class, 'showProfile'])
     ->name('admin.users.profile');
-        
-
 });
