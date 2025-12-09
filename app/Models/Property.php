@@ -13,9 +13,11 @@ class Property extends Model
         'address',
         'availability',
         'owner_info',
-        'images'
+        'images',
+        'owner_id'
     ];
     protected $casts = [
     'images' => 'array',
     ];
+    
 }

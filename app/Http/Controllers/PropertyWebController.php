@@ -4,13 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Property;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PropertyWebController extends Controller
 {
-    // Show all properties (Owner dashboard)
+    // Show properties belonging ONLY to the logged-in owner
     public function index()
     {
-        $properties = Property::all();
+        $ownerId = Auth::id();
+
+        $properties = Property::where('owner_id', $ownerId)->get();
+
         return view('owner.properties.index', compact('properties'));
     }
 
@@ -32,6 +36,7 @@ class PropertyWebController extends Controller
             'owner_info'   => 'required',
             'images.*'     => 'image|mimes:jpg,jpeg,png|max:2048'
         ]);
+
         $images = [];
 
         if ($request->hasFile('images')) {
@@ -40,7 +45,7 @@ class PropertyWebController extends Controller
                 $img->storeAs('public/property_images', $name);
                 $images[] = $name;
             }
-        }    
+        }
 
         Property::create([
             'title'        => $request->title,
@@ -49,8 +54,8 @@ class PropertyWebController extends Controller
             'address'      => $request->address,
             'availability' => $request->availability,
             'owner_info'   => $request->owner_info,
+            'owner_id'     => Auth::id(),         // ✅ Link property to the owner
             'images'       => json_encode($images)
-
         ]);
 
         return redirect('/owner/properties')->with('success', 'Property added successfully!');
@@ -63,7 +68,7 @@ class PropertyWebController extends Controller
         return view('owner.properties.edit', compact('property'));
     }
 
-    // Update a property
+    // Update property
     public function update(Request $request, $id)
     {
         $request->validate([
