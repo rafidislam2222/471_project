@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\PropertyWebController;
+//use App\Http\Controllers\PropertyUserController; // <-- added for user side
 
 /*
 |--------------------------------------------------------------------------
@@ -59,6 +60,16 @@ Route::get('/owner/properties/{id}/edit', [PropertyWebController::class, 'edit']
 Route::post('/owner/properties/{id}/update', [PropertyWebController::class, 'update']); // update
 
 Route::get('/owner/properties/{id}/delete', [PropertyWebController::class, 'destroy']); // delete
+
+/*
+|--------------------------------------------------------------------------
+| USER PROPERTY VIEW + BOOKING ROUTES
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/properties', [PropertyUserController::class, 'index']);            // user list
+Route::get('/properties/{id}', [PropertyUserController::class, 'show']);        // user details
+Route::post('/properties/{id}/book', [PropertyUserController::class, 'book'])->middleware('auth'); // booking
 /*
 |--------------------------------------------------------------------------
 | ADMIN USER MANAGEMENT (ONLY ADMIN)

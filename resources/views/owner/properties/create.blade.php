@@ -23,7 +23,14 @@
     <textarea name="description"></textarea><br><br>
 
     <label>Rent Price:</label>
-    <input type="number" name="rent_price" required><br><br>
+    <input type="number" name="rent_price" min="1" required><br>
+
+    @error('rent_price')
+        <p style="color:red; margin-top:4px;">{{ $message }}</p>
+    @enderror
+
+    <br>
+
 
     <label>Address:</label>
     <input type="text" name="address" required><br><br>
