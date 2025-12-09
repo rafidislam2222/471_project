@@ -9,14 +9,23 @@
 
 <p>Welcome Owner!</p>
 
-<a href="/owner/properties" 
-   style="padding:10px 15px; background:green; color:white; text-decoration:none; border-radius:5px;">
-   ➕ Add / Manage Properties
+<!-- Add New Property -->
+<a href="/owner/properties/create"
+   style="padding:10px 15px; background:#28a745; color:white; text-decoration:none; border-radius:5px; margin-right:10px;">
+   ➕ Add New Property
 </a>
 
-<br><br>
+<!-- Show My Properties -->
+<a href="/owner/properties"
+   style="padding:10px 15px; background:#007bff; color:white; text-decoration:none; border-radius:5px; margin-right:10px;">
+   📄 Show My Properties
+</a>
 
-<a href="/logout">Logout</a>
+<!-- Logout -->
+<a href="/logout"
+   style="padding:10px 15px; background:#dc3545; color:white; text-decoration:none; border-radius:5px;">
+   🚪 Logout
+</a>
 
 </body>
 </html>

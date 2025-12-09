@@ -30,7 +30,7 @@ class PropertyWebController extends Controller
         $request->validate([
             'title'        => 'required',
             'description'  => 'nullable',
-            'rent_price'   => 'required|numeric',
+            'rent_price'   => 'required|numeric|min:1',
             'address'      => 'required',
             'availability' => 'required|boolean',
             'owner_info'   => 'required',
@@ -58,7 +58,8 @@ class PropertyWebController extends Controller
             'images'       => json_encode($images)
         ]);
 
-        return redirect('/owner/properties')->with('success', 'Property added successfully!');
+        return redirect('/owner/dashboard')->with('success', 'Property added successfully!');
+
     }
 
     // Show edit form
@@ -74,7 +75,7 @@ class PropertyWebController extends Controller
         $request->validate([
             'title'        => 'required',
             'description'  => 'nullable',
-            'rent_price'   => 'required|numeric',
+            'rent_price'   => 'required|numeric|min:1',
             'address'      => 'required',
             'availability' => 'required|boolean',
             'owner_info'   => 'required',
