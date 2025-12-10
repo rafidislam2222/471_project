@@ -3,25 +3,13 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Models\Rent; // Make sure your Rent model is imported
+use App\Models\Rent; 
 use App\Notifications\SystemNotification;
 
 class SendRentReminders extends Command
 {
-    /**
-     * The name and signature of the console command.
-     * This line MUST be here (inside the class, not inside a function).
-     */
     protected $signature = 'rent:remind';
-
-    /**
-     * The console command description.
-     */
     protected $description = 'Send notifications for rent due tomorrow';
-
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
         // 1. Find rents due tomorrow that are unpaid

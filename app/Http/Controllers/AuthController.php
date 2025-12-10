@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\User;
+use Illuminate\Http\Request; //handel Frontend requests
+use App\Models\User; //Database Connection
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Auth; //Login/Logout with roles
 
 class AuthController extends Controller
 {
@@ -25,7 +25,7 @@ class AuthController extends Controller
         ]);
 
 
-        ///add superkey validation for admin role
+        ////////Add superkey validation for admin role////////////////////////
         $role=$request->role;
         if ($role === 'admin') {
             $superKeyFromForm = $request->input('super_key');
@@ -65,7 +65,7 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
-//suspend if  the user is suspended not logged in
+//suspend if  the user is suspended not logged in//////
         if ($user->status == 'suspended') {
             $now = now();
             if ($user->suspended_until && $now->lessThan($user->suspended_until)) {

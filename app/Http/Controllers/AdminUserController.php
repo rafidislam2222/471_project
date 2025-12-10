@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class AdminUserController extends Controller
 {
-    // 1️⃣ View all users (with role filter + search)
+    // 1 View all users (with role filter + search)
     public function index(Request $request)
     {
         // Read role filter from URL: ?role=admin / owner / user
@@ -18,7 +18,7 @@ class AdminUserController extends Controller
 
         $query = User::query();
 
-        // Filter by role, if valid
+        // Filter by role, if valid//The Boxes
         if (in_array($role, ['user', 'owner', 'admin'])) {
             $query->where('role', $role);
         }
@@ -41,7 +41,7 @@ class AdminUserController extends Controller
         ]);
     }
 
-    // 2️⃣ Change user role
+    //Change user role
     public function updateRole(Request $request, User $user)
     {
         $request->validate([
@@ -54,7 +54,7 @@ class AdminUserController extends Controller
         return back()->with('success', 'User role updated.');
     }
 
-    // 3️⃣ Suspend / unsuspend user (temporary or permanent)
+    // Suspend / unsuspend user (temporary or permanent)
     public function suspend(Request $request, User $user)
     {
         $request->validate([
@@ -85,7 +85,7 @@ class AdminUserController extends Controller
         return back()->with('success', 'User suspension updated.');
     }
 
-    // 4️⃣ Permanently delete a user
+    //Permanently delete a user
     public function destroy(User $user)
     {
         $user->delete();
@@ -93,7 +93,7 @@ class AdminUserController extends Controller
         return back()->with('success', 'User account deleted.');
     }
 
-    // 5️⃣ View user profile
+    // View user profile
     public function showProfile(User $user)
     {
         return view('admin.users.profile', compact('user'));

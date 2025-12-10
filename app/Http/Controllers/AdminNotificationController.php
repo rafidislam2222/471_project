@@ -8,9 +8,6 @@ use App\Notifications\SystemNotification;
 
 class AdminNotificationController extends Controller
 {
-    /**
-     * Handle the admin sending a manual notification.
-     */
     public function sendNotification(Request $request)
     {
         // 1. Validate the input
