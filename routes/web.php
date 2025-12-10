@@ -6,9 +6,7 @@ use App\Http\Controllers\PropertyWebController;
 use App\Http\Controllers\PropertyUserController; // <-- added for user side
 
 /*
-|--------------------------------------------------------------------------
 | Authentication Routes
-|--------------------------------------------------------------------------
 */
 Route::get('/', function () {
     return view('welcome');
@@ -23,9 +21,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/logout', [AuthController::class, 'logout']);
 
 /*
-|--------------------------------------------------------------------------
 | Dashboard Routes
-|--------------------------------------------------------------------------
 */
 
 Route::get('/admin/dashboard', function () {
@@ -41,11 +37,8 @@ Route::get('/user/dashboard', function () {
 });
 
 /*
-|--------------------------------------------------------------------------
 | OWNER PROPERTY MANAGEMENT (WEB UI)
-|--------------------------------------------------------------------------
 */
-
 Route::get('/owner/properties', [PropertyWebController::class, 'index']);          // list
 Route::get('/owner/properties/create', [PropertyWebController::class, 'create']); // form add
 Route::post('/owner/properties', [PropertyWebController::class, 'store']);        // save new
@@ -56,9 +49,7 @@ Route::post('/owner/properties/{id}/update', [PropertyWebController::class, 'upd
 Route::get('/owner/properties/{id}/delete', [PropertyWebController::class, 'destroy']); // delete
 
 /*
-|--------------------------------------------------------------------------
 | USER PROPERTY VIEW + BOOKING ROUTES
-|--------------------------------------------------------------------------
 */
 
 Route::get('/properties', [PropertyUserController::class, 'index']);            // user list
