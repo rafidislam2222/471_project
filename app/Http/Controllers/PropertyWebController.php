@@ -1,10 +1,12 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\User;
 use App\Models\Property;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Notifications\SystemNotification;
+use Illuminate\Support\Facades\Notification;
 
 class PropertyWebController extends Controller
 {
@@ -47,7 +49,7 @@ class PropertyWebController extends Controller
             }
         }
 
-        Property::create([
+        $property=Property::create([
             'title'        => $request->title,
             'description'  => $request->description,
             'rent_price'   => $request->rent_price,
@@ -58,8 +60,30 @@ class PropertyWebController extends Controller
             'images'       => json_encode($images)
         ]);
 
-        return redirect('/owner/dashboard')->with('success', 'Property added successfully!');
 
+        //|Notification to admin about new property added|
+        //________________________________________________
+        $admins = User::where('role', 'admin')->get();
+        
+        if($admins->count() > 0) {
+            Notification::send($admins, new SystemNotification(
+                'New Property Listed: ' . $property->title . ' by ' . Auth::user()->name, 
+                url('/admin/properties') // Link for admin to view
+            ));
+        }
+
+        // B. Notify the Owner (Confirmation)
+        $user = Auth::user();
+        $user->notify(new SystemNotification(
+            'Success! Your property "' . $property->title . '" is now live.', 
+            url('/owner/properties') // Link for owner to view
+        ));
+
+        // ======================================================
+        // END NOTIFICATION CODE
+        // ======================================================
+
+        return redirect('/owner/dashboard')->with('success', 'Property added successfully!');
     }
 
     // Show edit form
@@ -102,5 +126,19 @@ class PropertyWebController extends Controller
         $property->delete();
 
         return redirect('/owner/properties')->with('success', 'Property deleted successfully!');
+    }
+    public function sendNotification(Request $request)
+    {
+        // Validate
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'message' => 'required|string|max:255',
+        ]);
+
+        // Find user and send
+        $user = User::find($request->user_id);
+        $user->notify(new SystemNotification($request->message));
+
+        return back()->with('success', 'Notification sent successfully!');
     }
 }

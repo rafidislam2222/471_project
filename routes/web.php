@@ -1,10 +1,9 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\PropertyWebController;
-//use App\Http\Controllers\PropertyUserController; // <-- added for user side
+use App\Http\Controllers\PropertyUserController; 
 
 /*
 |--------------------------------------------------------------------------
@@ -96,4 +95,21 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // View a user's profile    
     Route::get('/admin/users/{user}/profile', [AdminUserController::class, 'showProfile'])
     ->name('admin.users.profile');
+
+
+    // Mark all notifications as read
+    Route::get('/notifications/mark-read', function () {
+        auth()->user()->unreadNotifications->markAsRead();
+        return back();
+    })->name('notifications.read')->middleware('auth');
+
+    Route::get('/mark-as-read', function () {
+        auth()->user()->unreadNotifications->markAsRead();
+        return back();
+    })->name('markAsRead')->middleware('auth');
+
+    
+
+    
+
 });
