@@ -12,12 +12,9 @@ class PropertyWebController extends Controller
     public function index()
     {
         $ownerId = Auth::id();
-
         $properties = Property::where('owner_id', $ownerId)->get();
-
         return view('owner.properties.index', compact('properties'));
     }
-
     // Show add property form
     public function create()
     {
@@ -28,14 +25,14 @@ class PropertyWebController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title'        => 'required',
-            'description'  => 'nullable',
-            'rent_price'   => 'required|numeric|min:1',
-            'address'      => 'required',
-            'availability' => 'required|boolean',
-            'owner_info'   => 'required',
-            'images' => 'nullable|array',
-            'images.*'     => 'image|mimes:jpg,jpeg,png|max:102400'
+            'title'  => 'required',
+            'description'=> 'nullable',
+            'rent_price'=> 'required|numeric|min:1',
+            'address'  => 'required',
+            'availability'=> 'required|boolean',
+            'owner_info' => 'required',
+            'images' =>'nullable|array',
+            'images.*' => 'image|mimes:jpg,jpeg,png|max:102400'
         ]);
 
         $images = [];
@@ -47,18 +44,16 @@ class PropertyWebController extends Controller
                 $images[] = $name;
             }
         }
-
         Property::create([
-            'title'        => $request->title,
-            'description'  => $request->description,
-            'rent_price'   => $request->rent_price,
-            'address'      => $request->address,
-            'availability' => $request->availability,
-            'owner_info'   => $request->owner_info,
-            'owner_id'     => Auth::id(),         // ✅ Link property to the owner
-            'images'       => json_encode($images)
+            'title'    => $request->title,
+            'description'=> $request->description,
+            'rent_price'=> $request->rent_price,
+            'address' => $request->address,
+            'availability'=> $request->availability,
+            'owner_info' => $request->owner_info,
+            'owner_id'=> Auth::id(),         // Link property to the owner
+            'images'=> json_encode($images)
         ]);
-
         return redirect('/owner/dashboard')->with('success', 'Property added successfully!');
 
     }
@@ -74,23 +69,23 @@ class PropertyWebController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'title'        => 'required',
-            'description'  => 'nullable',
-            'rent_price'   => 'required|numeric|min:1',
-            'address'      => 'required',
-            'availability' => 'required|boolean',
-            'owner_info'   => 'required',
+            'title'=> 'required',
+            'description'=> 'nullable',
+            'rent_price'=> 'required|numeric|min:1',
+            'address'=> 'required',
+            'availability'=> 'required|boolean',
+            'owner_info' => 'required',
         ]);
 
         $property = Property::findOrFail($id);
 
         $property->update([
-            'title'        => $request->title,
-            'description'  => $request->description,
-            'rent_price'   => $request->rent_price,
-            'address'      => $request->address,
-            'availability' => $request->availability,
-            'owner_info'   => $request->owner_info,
+            'title' => $request->title,
+            'description'=> $request->description,
+            'rent_price'=> $request->rent_price,
+            'address' => $request->address,
+            'availability'=> $request->availability,
+            'owner_info' => $request->owner_info,
         ]);
 
         return redirect('/owner/properties')->with('success', 'Property updated successfully!');
@@ -101,7 +96,6 @@ class PropertyWebController extends Controller
     {
         $property = Property::findOrFail($id);
         $property->delete();
-
         return redirect('/owner/properties')->with('success', 'Property deleted successfully!');
     }
 }
