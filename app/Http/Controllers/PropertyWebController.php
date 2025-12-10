@@ -79,10 +79,6 @@ class PropertyWebController extends Controller
             url('/owner/properties') // Link for owner to view
         ));
 
-        // ======================================================
-        // END NOTIFICATION CODE
-        // ======================================================
-
         return redirect('/owner/dashboard')->with('success', 'Property added successfully!');
     }
 
