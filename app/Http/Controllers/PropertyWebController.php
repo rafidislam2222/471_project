@@ -42,7 +42,7 @@ class PropertyWebController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $img) {
                 $name = time() . '_' . $img->getClientOriginalName();
-                $img->storeAs('public/property_images', $name);
+                $img->storeAs('property_images', $name, 'public');
                 $images[] = $name;
             }
         }

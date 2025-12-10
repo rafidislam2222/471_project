@@ -1,4 +1,4 @@
-<!-- <?php
+<?php
 
 namespace App\Models;
 
@@ -25,4 +25,3 @@ class Booking extends Model
         return $this->belongsTo(Property::class);
     }
 }
- -->

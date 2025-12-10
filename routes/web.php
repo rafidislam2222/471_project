@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PropertyWebController;
-//use App\Http\Controllers\PropertyUserController; // <-- added for user side
+use App\Http\Controllers\PropertyUserController; // <-- added for user side
 
 /*
 |--------------------------------------------------------------------------
@@ -58,6 +58,6 @@ Route::get('/owner/properties/{id}/delete', [PropertyWebController::class, 'dest
 |--------------------------------------------------------------------------
 */
 
-//Route::get('/properties', [PropertyUserController::class, 'index']);            // user list
-//Route::get('/properties/{id}', [PropertyUserController::class, 'show']);        // user details
-//Route::post('/properties/{id}/book', [PropertyUserController::class, 'book'])->middleware('auth'); // booking
+Route::get('/properties', [PropertyUserController::class, 'index']);            // user list
+Route::get('/properties/{id}', [PropertyUserController::class, 'show']);        // user details
+Route::post('/properties/{id}/book', [PropertyUserController::class, 'book'])->middleware('auth'); // booking
