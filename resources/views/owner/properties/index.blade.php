@@ -69,8 +69,8 @@
 
         /* Property images */
         img.property-img {
-            width: 120px;
-            height: 90px;
+            width: 200px;
+            height: 150px;
             object-fit: cover;
             margin: 5px;
             border-radius: 5px;
