@@ -1,122 +1,78 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Property</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 500px;
-            margin: 30px auto;
-            padding: 20px;
-        }
-
-        h1 {
-            text-align: center;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        input, textarea, select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        textarea {
-            min-height: 80px;
-        }
-
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #1e7e34;
-        }
-
-        .success-message {
-            background-color: #d4edda;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-        }
-
-        .error-message {
-            color: red;
-            font-size: 12px;
-            margin-top: 3px;
-        }
-    </style>
 </head>
 <body>
-    <h1>Add New Property</h1>
 
-    @if(session('success'))
-        <div class="success-message">{{ session('success') }}</div>
-    @endif
+<h1>Add New Property</h1>
 
-    <form action="/owner/properties" method="POST" enctype="multipart/form-data">
-        @csrf
+{{-- Success message --}}
+@if(session('success'))
+    <p style="color: green;">{{ session('success') }}</p>
+@endif
 
-        <div class="form-group">
-            <label>Title:</label>
-            <input type="text" name="title" required>
-        </div>
+<form action="/owner/properties" method="POST" enctype="multipart/form-data">
 
-        <div class="form-group">
-            <label>Description:</label>
-            <textarea name="description"></textarea>
-        </div>
+    @csrf
 
-        <div class="form-group">
-            <label>Rent Price:</label>
-            <input type="number" name="rent_price" min="1" required>
-            @error('rent_price')
-                <p class="error-message">{{ $message }}</p>
-            @enderror
-        </div>
+    <label>Title:</label>
+    <input type="text" name="title" value="{{ old('title') }}" required><br>
+    @error('title')
+        <p style="color:red; margin-top:4px;">{{ $message }}</p>
+    @enderror
+    <br>
 
-        <div class="form-group">
-            <label>Address:</label>
-            <input type="text" name="address" required>
-        </div>
+    <label>Description:</label>
+    <textarea name="description">{{ old('description') }}</textarea><br>
+    @error('description')
+        <p style="color:red; margin-top:4px;">{{ $message }}</p>
+    @enderror
+    <br>
 
-        <div class="form-group">
-            <label>Availability:</label>
-            <select name="availability" required>
-                <option value="1">Available</option>
-                <option value="0">Not Available</option>
-            </select>
-        </div>
+    <label>Rent Price:</label>
+    <input type="number" name="rent_price" min="1" value="{{ old('rent_price') }}" required><br>
+    @error('rent_price')
+        <p style="color:red; margin-top:4px;">{{ $message }}</p>
+    @enderror
 
-        <div class="form-group">
-            <label>Owner Info:</label>
-            <textarea name="owner_info" required></textarea>
-        </div>
+    <br>
 
-        <div class="form-group">
-            <label>Property Images:</label>
-            <input type="file" name="images[]" multiple accept="image/*">
-        </div>
 
-        <button type="submit">Save Property</button>
-    </form>
+    <label>Address:</label>
+    <input type="text" name="address" value="{{ old('address') }}" required><br><br>
+    @error('address')
+        <p style="color:red; margin-top:4px;">{{ $message }}</p>
+    @enderror
+
+    <label>Availability:</label>
+    <select name="availability" required>
+        <option value="1" {{ old('availability') === '1' ? 'selected' : '' }}>Available</option>
+        <option value="0" {{ old('availability') === '0' ? 'selected' : '' }}>Not Available</option>
+    </select><br><br>
+    @error('availability')
+        <p style="color:red; margin-top:4px;">{{ $message }}</p>
+    @enderror
+
+    <label>Owner Info:</label>
+    <textarea name="owner_info" required>{{ old('owner_info') }}</textarea><br><br>
+    @error('owner_info')
+        <p style="color:red; margin-top:4px;">{{ $message }}</p>
+    @enderror
+
+    <!-- NEW: MULTIPLE IMAGES UPLOAD -->
+    <label>Property Images:</label>
+    <input type="file" name="images[]" multiple accept="image/*"><br><br>
+    @error('images')
+        <p style="color:red; margin-top:4px;">{{ $message }}</p>
+    @enderror
+    @error('images.*')
+        <p style="color:red; margin-top:4px;">{{ $message }}</p>
+    @enderror
+
+    <button type="submit">Save Property</button>
+
+</form>
+
 </body>
 </html>

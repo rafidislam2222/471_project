@@ -34,7 +34,8 @@ class PropertyWebController extends Controller
             'address'      => 'required',
             'availability' => 'required|boolean',
             'owner_info'   => 'required',
-            'images.*'     => 'image|mimes:jpg,jpeg,png|max:2048'
+            'images' => 'nullable|array',
+            'images.*'     => 'image|mimes:jpg,jpeg,png|max:102400'
         ]);
 
         $images = [];
