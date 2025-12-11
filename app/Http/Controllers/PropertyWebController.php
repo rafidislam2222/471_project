@@ -6,9 +6,8 @@ use App\Models\Property;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\SystemNotification;
-use Illuminate\Support\Facades\Notification;
 use App\Services\GmailService; // Import the service we created
-use App\Mail\NewPropertyNotification; // Import the Mailable
+use Illuminate\Support\Facades\Notification;
 
 class PropertyWebController extends Controller
 {
@@ -29,7 +28,7 @@ class PropertyWebController extends Controller
     }
 
     // Save new property
-    public function store(Request $request)
+    public function store(Request $request,GmailService $gmail)
     {
         $request->validate([
             'title'        => 'required',
@@ -46,7 +45,7 @@ class PropertyWebController extends Controller
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $img) {
                 $name = time() . '_' . $img->getClientOriginalName();
-                $img->storeAs('public/property_images', $name);
+                $img->storeAs('property_images', $name, 'public');
                 $images[] = $name;
             }
         }
@@ -61,26 +60,56 @@ class PropertyWebController extends Controller
             'owner_id'     => Auth::id(),         //  Link property to the owner
             'images'       => json_encode($images)
         ]);
+                            //NOTIFICATIONS////
 
-
-        //|Notification to admin about new property added
+        // Notify Admins (Database Only)
         $admins = User::where('role', 'admin')->get();
-        
         if($admins->count() > 0) {
             Notification::send($admins, new SystemNotification(
                 'New Property Listed: ' . $property->title . ' by ' . Auth::user()->name, 
-                url('/admin/properties') // Link for admin to view
+                url('/admin/properties')
             ));
         }
 
-        //Notify the Owner (Confirmation)
+        // Notify the Owner (Confirmation - Database Only)
         $user = Auth::user();
         $user->notify(new SystemNotification(
             'Success! Your property "' . $property->title . '" is now live.', 
-            url('/owner/properties') // Link for owner to view
+            url('/owner/properties')
         ));
 
-        return redirect('/owner/dashboard')->with('success', 'Property added successfully!');
+        // NOTIFY ALL TENANTS (Gmail API + Bell Icon)
+        if (!$gmail->connect()) {
+            \Log::error('Gmail API Token Expired. Emails not sent.');
+        }
+
+        $allUsers = User::all();
+
+        foreach ($allUsers as $targetUser) {
+            // Don't spam the owner or the admins again (optional filter)
+            if ($targetUser->id != Auth::id() && $targetUser->role != 'admin') {
+                
+                // 1. Bell Icon
+                $targetUser->notify(new SystemNotification(
+                    'New Property Alert: ' . $property->title,
+                    url('/properties/' . $property->id)
+                ));
+
+                // 2. Gmail API
+                try {
+                    $gmail->sendEmail(
+                        $targetUser->email,
+                        'New Property Alert: ' . $property->title,
+                        "A new property is available at " . $property->address . ". \n\nCheck it out here: " . url('/properties/' . $property->id)
+                    );
+                } catch (\Exception $e) {
+                    \Log::error("Failed to email user {$targetUser->id}: " . $e->getMessage());
+                }
+            }
+        }
+        // ====================================================
+
+        return redirect('/owner/dashboard')->with('success', 'Property added and notifications sent!');
     }
 
     // Show edit form
@@ -103,7 +132,6 @@ class PropertyWebController extends Controller
         ]);
 
         $property = Property::findOrFail($id);
-
         $property->update([
             'title'        => $request->title,
             'description'  => $request->description,
@@ -121,70 +149,6 @@ class PropertyWebController extends Controller
     {
         $property = Property::findOrFail($id);
         $property->delete();
-
         return redirect('/owner/properties')->with('success', 'Property deleted successfully!');
-    }
-    public function sendNotification(Request $request)
-    {
-        // Validate
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'message' => 'required|string|max:255',
-        ]);
-
-        // Find user and send
-        $user = User::find($request->user_id);
-        $user->notify(new SystemNotification($request->message));
-
-        return back()->with('success', 'Notification sent successfully!');
-    }
-}
-class PropertyController extends Controller
-{
-    public function store(Request $request, GmailService $gmail)
-    {
-        // 1. Validate the Request data (Not shown, but necessary)
-        // $request->validate([...]);
-
-        // 2. Create the Property
-        $property = Property::create($request->all());
-
-        // 3. Email Logic using the Gmail Service
-        try {
-            // Check the connection and refresh the token if necessary
-            if (!$gmail->connect()) {
-                // Log this failure and maybe notify the admin
-                \Log::error('Gmail API token requires re-authorization.'); 
-                // Return or continue without sending emails
-            } else {
-                // Get all users (You might want to filter by role, e.g., ->where('role', 'tenant'))
-                $users = User::all();
-                
-                // Chunk the users to prevent memory issues for very large lists
-                $users->chunk(50)->each(function ($chunk) use ($gmail, $property) {
-                    foreach ($chunk as $user) {
-                        
-                        // Render the Mailable's content
-                        $mailable = (new NewPropertyNotification($property))->render();
-                        
-                        // Get the subject from the Mailable
-                        $subject = (new NewPropertyNotification($property))->envelope()->subject;
-
-                        // Use our custom service to send the email
-                        $gmail->sendEmail(
-                            $user->email,  // Recipient email
-                            $subject,      // Subject line
-                            $mailable      // HTML body content
-                        );
-                    }
-                });
-            }
-
-        } catch (\Exception $e) {
-            // Log any failures during the sending process
-            \Log::error('Failed to send bulk email notification: ' . $e->getMessage());
-        }
-
-        return redirect()->route('admin.properties.index')->with('success', 'Property added and notifications sent!');
     }
 }

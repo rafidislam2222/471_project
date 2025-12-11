@@ -139,6 +139,7 @@
                     value="{{ $search ?? '' }}"
                     placeholder="Search by Name, Email or ID..."
                 >
+                <button type="submit" style="display: none;">Search</button>
             </form>
 
             {{-- ROLE FILTER BUTTONS --}}

@@ -15,17 +15,12 @@ class NewPropertyNotification extends Mailable
 
     public $property; // Public property to pass data to the view
 
-    /**
-     * Create a new message instance.
-     */
+
     public function __construct(Property $property)
     {
         $this->property = $property;
     }
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
         return new Envelope(
@@ -33,9 +28,6 @@ class NewPropertyNotification extends Mailable
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         return new Content(

@@ -10,14 +10,16 @@ class AdminUserController extends Controller
     // 1 View all users (with role filter + search)
     public function index(Request $request)
     {
+        $role=$request->query('role');
+        $search=$request->query('search');
+        $query=User::query();
+
+        
         // Read role filter from URL: ?role=admin / owner / user
         $role = $request->query('role');
-
-        // Read search text: ?search=...
+        // Read search text
         $search = $request->query('search');
-
         $query = User::query();
-
         // Filter by role, if valid//The Boxes
         if (in_array($role, ['user', 'owner', 'admin'])) {
             $query->where('role', $role);

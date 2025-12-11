@@ -20,10 +20,10 @@ class SystemNotification extends Notification
         $this->url = $url;
     }
 
-    // --- FIX IS HERE ---
+    
     public function via($notifiable)
     {
-        return ['database', 'mail']; // Now it sends BOTH!
+        return ['database']; 
     }
 
     public function toMail($notifiable)
@@ -41,7 +41,7 @@ class SystemNotification extends Notification
         return [
             'message' => $this->message,
             'url' => $this->url,
-            'time' => now()->diffForHumans(),
+            #'time' => now()->diffForHumans(),
         ];
     }
 }

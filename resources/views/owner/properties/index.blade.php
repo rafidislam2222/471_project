@@ -58,7 +58,7 @@
 
             @if(!empty($images))
                 @foreach($images as $img)
-                    <img src="{{ asset('property_images/'.$img) }}" class="property-img">
+                    <img src="{{ asset('storage/property_images/'.$img) }}" class="property-img">
                 @endforeach
             @else
                 <i>No Images</i>

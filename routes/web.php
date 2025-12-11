@@ -6,7 +6,6 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\PropertyWebController;
 use App\Http\Controllers\PropertyUserController; 
 use App\Services\GmailService;
-
 ////////////////////////////////// General Routes ////////////////////////////
 Route::get('/', function () {
     return redirect('/login'); // Redirects homepage to login
@@ -16,6 +15,9 @@ Route::get('/', function () {
 | Authentication Routes
 |--------------------------------------------------------------------------
 */
+Route::get('/', function () {
+    return view('welcome');
+});
 
 Route::get('/register', [AuthController::class, 'showRegister']);
 Route::post('/register', [AuthController::class, 'register']);
@@ -112,4 +114,24 @@ Route::get('/gmail/login', function (GmailService $gmail) {
 Route::get('/gmail/callback', function (Request $request, GmailService $gmail) {
     $gmail->saveToken($request->code);
     return "Connected successfully! You can now send emails.";
+});
+
+//user notification route
+Route::get('/notifications/mark-read', function () {
+    auth()->user()->unreadNotifications->markAsRead();
+    return back();
+})->name('notifications.read')->middleware('auth');
+////////////test//////
+Route::get('/test-gmail-api', function (App\Services\GmailService $gmail) {
+    $gmail->connect();
+    try {
+        $gmail->sendEmail(
+            'gm.abir.1415@gmail.com', 
+            'API Success Test',
+            'This email was sent via Google API from your Laravel App!'
+        );
+        return "SUCCESS: Email sent!";
+    } catch (\Exception $e) {
+        return "FAILED: " . $e->getMessage();
+    }
 });
