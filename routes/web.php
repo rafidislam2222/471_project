@@ -121,7 +121,7 @@ Route::get('/notifications/mark-read', function () {
     auth()->user()->unreadNotifications->markAsRead();
     return back();
 })->name('notifications.read')->middleware('auth');
-////////////test//////
+                     ////////////manual test//////
 Route::get('/test-gmail-api', function (App\Services\GmailService $gmail) {
     $gmail->connect();
     try {

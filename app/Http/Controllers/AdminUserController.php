@@ -7,34 +7,29 @@ use Illuminate\Http\Request;
 
 class AdminUserController extends Controller
 {
-    // 1 View all users (with role filter + search)
+    // 1. LIST USERS
     public function index(Request $request)
     {
-        $role=$request->query('role');
-        $search=$request->query('search');
-        $query=User::query();
-
-        
-        // Read role filter from URL: ?role=admin / owner / user
         $role = $request->query('role');
-        // Read search text
-        $search = $request->query('search');
+        $search = $request->input('search'); 
+
         $query = User::query();
-        // Filter by role, if valid//The Boxes
+
         if (in_array($role, ['user', 'owner', 'admin'])) {
             $query->where('role', $role);
         }
 
-        // Filter by search, if provided
         if (!empty($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
                   ->orWhere('email', 'like', '%' . $search . '%')
-                  ->orWhere('id', $search); // exact match for ID
+                  ->orWhere('id', $search);
             });
         }
 
-        $users = $query->get();
+        $query->orderBy('created_at', 'desc');
+
+        $users = $query->paginate(10)->withQueryString();
 
         return view('admin.users.index', [
             'users'       => $users,
@@ -43,61 +38,66 @@ class AdminUserController extends Controller
         ]);
     }
 
-    //Change user role
-    public function updateRole(Request $request, User $user)
+    // 2. SHOW USER PROFILE (RENAMED TO FIX ERROR)
+    public function showProfile($id)
+    {
+        $user = User::findOrFail($id);
+        return view('admin.users.profile', compact('user'));
+    }
+
+    // 3. UPDATE ROLE
+    public function updateRole(Request $request, $id)
     {
         $request->validate([
-            'role' => 'required|in:user,owner,admin',
+            'role' => 'required|in:admin,owner,user',
         ]);
 
+        $user = User::findOrFail($id);
         $user->role = $request->role;
         $user->save();
 
-        return back()->with('success', 'User role updated.');
+        return redirect()->back()->with('success', "User role updated to {$request->role}.");
     }
 
-    // Suspend / unsuspend user (temporary or permanent)
-    public function suspend(Request $request, User $user)
+    // 4. SUSPEND / UNSUSPEND USER
+    public function suspend(Request $request, $id)
     {
-        $request->validate([
-            'type' => 'required|in:none,temporary,permanent',
-            'days' => 'nullable|integer|min:1', // used for temporary
-        ]);
+        $user = User::findOrFail($id);
+        $type = $request->input('type'); 
 
-        if ($request->type === 'none') {
-            // remove suspension
+        if ($type === 'none') {
             $user->status = 'active';
             $user->suspended_until = null;
-        } elseif ($request->type === 'temporary') {
-            $days = $request->days;
-            if ($days === null || $days === '') {
-                $days = 7; // default 7 days
-            }
-            $days = (int) $days;
-
+            $msg = 'User has been reactivated.';
+        } 
+        elseif ($type === 'permanent') {
+            $user->status = 'suspended';
+            $user->suspended_until = null; 
+            $msg = 'User has been permanently suspended.';
+        } 
+        else {
+            $days = (int) $request->input('days', 7);
             $user->status = 'suspended';
             $user->suspended_until = now()->addDays($days);
-        } elseif ($request->type === 'permanent') {
-            $user->status = 'suspended';
-            $user->suspended_until = null; // null = permanent
+            $msg = "User suspended for {$days} days.";
         }
 
         $user->save();
 
-        return back()->with('success', 'User suspension updated.');
+        return redirect()->back()->with('success', $msg);
     }
 
-    //Permanently delete a user
-    public function destroy(User $user)
+    // 5. DELETE USER
+    public function destroy($id)
     {
+        $user = User::findOrFail($id);
+        
+        if ($user->id == auth()->id()) {
+            return redirect()->back()->with('error', 'You cannot delete yourself!');
+        }
+
         $user->delete();
 
-        return back()->with('success', 'User account deleted.');
-    }
-
-    // View user profile
-    public function showProfile(User $user)
-    {
-        return view('admin.users.profile', compact('user'));
+        return redirect()->back()->with('success', 'User deleted successfully.');
     }
 }
