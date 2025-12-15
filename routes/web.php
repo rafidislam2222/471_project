@@ -4,7 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\PropertyWebController;
 use App\Http\Controllers\PropertyUserController; 
-
+use App\Http\Controllers\ForgotPasswordController;
 /*
 |--------------------------------------------------------------------------
 | Homepage Route (Fixes the 404 on load)
@@ -108,8 +108,18 @@ Route::middleware(['auth', 'admin'])->group(function () {
         return back();
     })->name('markAsRead')->middleware('auth');
 
-    
 
+    // 1. Show the "Enter Email" form
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
+    
+    // 2. Handle the "Send OTP" button click
+    Route::post('/forgot-password-send-otp', [ForgotPasswordController::class, 'sendOtp'])->name('password.email');
+    
+    // 3. Show the "Enter OTP & New Password" form
+    Route::get('/reset-password', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
+    
+    // 4. Handle the final "Change Password" button click
+    Route::post('/reset-password-verify', [ForgotPasswordController::class, 'resetPassword'])->name('password.update');
     
 
 });
