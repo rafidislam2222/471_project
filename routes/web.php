@@ -107,4 +107,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
         auth()->user()->unreadNotifications->markAsRead();
         return back();
     })->name('markAsRead');
+
+
+
 });

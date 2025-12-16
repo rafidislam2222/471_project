@@ -4,70 +4,85 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 
 class ForgotPasswordController extends Controller
 {
-    // Show the form to enter email
+    // --- PAGE 1: Ask for Email ---
     public function showForgotForm()
     {
-        return view('forgot-password'); 
+        return view('auth.forgot-password');
     }
 
-    // Generate OTP and Send Email
+    // --- ACTION: Generate OTP & Send Email ---
     public function sendOtp(Request $request)
     {
+        // 1. Validate email exists
         $request->validate(['email' => 'required|email|exists:users,email']);
+        $email = $request->email;
+        
+        // 2. Generate random 4-digit code
+        $otp = rand(1000, 9999);
 
-        $user = User::where('email', $request->email)->first();
+        // 3. Save OTP in Cache for 10 minutes
+        Cache::put('otp_' . $email, $otp, now()->addMinutes(10));
 
-        // Generate a random 6-digit code
-        $otp = rand(100000, 999999);
+        // 4. Send Email DIRECTLY (Fixes blank email issue)
+        try {
+            // We use Mail::html to force the text into the email.
+            // This bypasses the View file entirely.
+            $messageBody = "<h1>Password Reset</h1>
+                            <p>Your OTP Code is: <strong style='font-size:24px;'>$otp</strong></p>
+                            <p>This code expires in 10 minutes.</p>";
 
-        // Save OTP to the user's record in the database
-        $user->otp = $otp;
-        $user->save();
+            Mail::html($messageBody, function ($message) use ($email) {
+                $message->to($email);
+                $message->subject('Your Password Reset Code');
+            });
 
-        // Send Email (Simple text email)
-        // NOTE: Make sure your .env file has MAIL settings configured!
-        Mail::raw("Your OTP for password reset is: $otp", function ($message) use ($user) {
-            $message->to($user->email)
-                    ->subject('Password Reset OTP');
-        });
+        } catch (\Exception $e) {
+            return back()->withErrors(['email' => 'Failed to send email. Try again later.']);
+        }
 
-        return redirect('/reset-password')->with('success', 'OTP sent to your email! Please check it.');
+        // 5. REDIRECT to Page 2 (Pass email in URL so we know who it is)
+        return redirect()->route('password.reset', ['email' => $email])
+                         ->with('success', 'Code sent! Check your inbox.');
     }
 
-    // Show the form to enter OTP and new password
-    public function showResetForm()
+    // --- PAGE 2: Ask for OTP + New Password ---
+    public function showResetForm(Request $request)
     {
-        return view('reset-password');
+        // We capture the email from the URL so we can put it in a hidden field
+        return view('auth.reset-password', ['email' => $request->email]);
     }
 
-    // Verify OTP and Update Password
+    // --- ACTION: Verify OTP & Update Password ---
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|exists:users,email',
-            'otp' => 'required',
-            'password' => 'required|min:6|confirmed', // 'confirmed' checks if password matches password_confirmation
+            'email'    => 'required|email|exists:users,email',
+            'otp'      => 'required|numeric',
+            'password' => 'required|min:8|confirmed'
         ]);
 
-        // Find user with this email AND this OTP
-        $user = User::where('email', $request->email)
-                    ->where('otp', $request->otp)
-                    ->first();
+        // 1. Check if OTP matches the one in Cache
+        $cachedOtp = Cache::get('otp_' . $request->email);
 
-        if (!$user) {
-            return back()->with('error', 'Invalid OTP or Email.');
+        if (!$cachedOtp || $cachedOtp != $request->otp) {
+            return back()->withErrors(['otp' => 'Wrong or expired code.']);
         }
 
-        // Update password
+        // 2. Update Password
+        $user = User::where('email', $request->email)->first();
         $user->password = Hash::make($request->password);
-        $user->otp = null; // Clear the OTP so it can't be used again
         $user->save();
 
-        return redirect('/login')->with('success', 'Password reset successfully! You can login now.');
+        // 3. Clear OTP
+        Cache::forget('otp_' . $request->email);
+
+        // 4. Send to Login
+        return redirect('/login')->with('success', 'Password changed! Please login.');
     }
 }
