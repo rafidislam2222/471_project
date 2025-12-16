@@ -1,31 +1,51 @@
 <?php
-use Illuminate\Http\Request;
+
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\PropertyWebController;
-use App\Http\Controllers\PropertyUserController; 
+use App\Http\Controllers\PropertyUserController;
+use App\Http\Controllers\ForgotPasswordController;
 use App\Services\GmailService;
-////////////////////////////////// General Routes ////////////////////////////
-Route::get('/', function () {
-    return redirect('/login'); // Redirects homepage to login
-});
+
 /*
 |--------------------------------------------------------------------------
-| Authentication Routes
+| General Routes
 |--------------------------------------------------------------------------
 */
+
+// Redirect homepage to login
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/login'); 
 });
 
-Route::get('/register', [AuthController::class, 'showRegister']);
-Route::post('/register', [AuthController::class, 'register']);
+/*
+|--------------------------------------------------------------------------
+| Authentication Routes (Guest)
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/login', [AuthController::class, 'showLogin']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::middleware('guest')->group(function () {
+    // Login & Register
+    Route::get('/register', [AuthController::class, 'showRegister']);
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
 
-Route::get('/logout', [AuthController::class, 'logout']);
+    // Forgot Password Routes
+    // 1. Show the "Enter Email" form
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
+    // 2. Handle the "Send OTP/Link" button click
+    Route::post('/forgot-password-send-otp', [ForgotPasswordController::class, 'sendOtp'])->name('password.email');
+    // 3. Show the "Enter OTP & New Password" form
+    Route::get('/reset-password', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
+    // 4. Handle the final "Change Password" button click
+    Route::post('/reset-password-verify', [ForgotPasswordController::class, 'resetPassword'])->name('password.update');
+});
+
+// Logout
+Route::get('/logout', [AuthController::class, 'logout'])->middleware('auth');
 
 /*
 |--------------------------------------------------------------------------
@@ -34,16 +54,16 @@ Route::get('/logout', [AuthController::class, 'logout']);
 */
 
 Route::get('/admin/dashboard', function () {
-    return redirect('/admin/users');
-});
+    return redirect('/admin/users'); // Redirects admin to user management
+})->middleware(['auth', 'admin']);
 
 Route::get('/owner/dashboard', function () {
     return view('dashboard.owner');
-});
+})->middleware(['auth']);
 
 Route::get('/user/dashboard', function () {
     return view('dashboard.user');
-});
+})->middleware(['auth']);
 
 /*
 |--------------------------------------------------------------------------
@@ -51,14 +71,15 @@ Route::get('/user/dashboard', function () {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/owner/properties', [PropertyWebController::class, 'index']);          // list
-Route::get('/owner/properties/create', [PropertyWebController::class, 'create']); // form add
-Route::post('/owner/properties', [PropertyWebController::class, 'store']);        // save new
+Route::middleware(['auth'])->group(function () {
+    Route::get('/owner/properties', [PropertyWebController::class, 'index']);          // list
+    Route::get('/owner/properties/create', [PropertyWebController::class, 'create']); // form add
+    Route::post('/owner/properties', [PropertyWebController::class, 'store']);        // save new
 
-Route::get('/owner/properties/{id}/edit', [PropertyWebController::class, 'edit']); // form edit
-Route::post('/owner/properties/{id}/update', [PropertyWebController::class, 'update']); // update
-
-Route::get('/owner/properties/{id}/delete', [PropertyWebController::class, 'destroy']); // delete
+    Route::get('/owner/properties/{id}/edit', [PropertyWebController::class, 'edit']); // form edit
+    Route::post('/owner/properties/{id}/update', [PropertyWebController::class, 'update']); // update
+    Route::get('/owner/properties/{id}/delete', [PropertyWebController::class, 'destroy']); // delete
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -70,9 +91,11 @@ Route::get('/properties', [PropertyUserController::class, 'index']);            
 Route::get('/properties/{id}', [PropertyUserController::class, 'show']);        // user details
 Route::post('/properties/{id}/book', [PropertyUserController::class, 'book'])->middleware('auth'); // booking
 
-
-
-//////////////////////////////////Admin Routes////////////////////////////
+/*
+|--------------------------------------------------------------------------
+| ADMIN ROUTES (Middleware: Auth + Admin)
+|--------------------------------------------------------------------------
+*/
 
 Route::middleware(['auth', 'admin'])->group(function () {
 
@@ -91,57 +114,33 @@ Route::middleware(['auth', 'admin'])->group(function () {
     // Delete a user permanently
     Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])
         ->name('admin.users.destroy');
+        
     // View a user's profile    
     Route::get('/admin/users/{user}/profile', [AdminUserController::class, 'showProfile'])
-    ->name('admin.users.profile');
+        ->name('admin.users.profile');
 
 
-    //////////////// Mark all notifications as read/////////////////
+    // Mark notifications as read
     Route::get('/notifications/mark-read', function () {
         auth()->user()->unreadNotifications->markAsRead();
         return back();
-    })->name('notifications.read')->middleware('auth');
+    })->name('notifications.read');
 
     Route::get('/mark-as-read', function () {
         auth()->user()->unreadNotifications->markAsRead();
         return back();
-    })->name('markAsRead')->middleware('auth');
+    })->name('markAsRead');
 });
 
+/*
+|--------------------------------------------------------------------------
+| GMAIL API ROUTES (Optional / Legacy)
+|--------------------------------------------------------------------------
+*/
 Route::get('/gmail/login', function (GmailService $gmail) {
     return redirect($gmail->getLoginUrl());
 });
 Route::get('/gmail/callback', function (Request $request, GmailService $gmail) {
     $gmail->saveToken($request->code);
     return "Connected successfully! You can now send emails.";
-});
-
-//user notification route
-Route::get('/notifications/mark-read', function () {
-    auth()->user()->unreadNotifications->markAsRead();
-    return back();
-})->name('notifications.read')->middleware('auth');
-                     ////////////manual test//////
-Route::get('/test-gmail-api', function (App\Services\GmailService $gmail) {
-    $gmail->connect();
-    try {
-        $gmail->sendEmail(
-            'gm.abir.1415@gmail.com', 
-            'API Success Test',
-            'This email was sent via Google API from your Laravel App!'
-        );
-        return "SUCCESS: Email sent!";
-    } catch (\Exception $e) {
-        return "FAILED: " . $e->getMessage();
-
-    }
-Route::get('/debug-view', function () {
-    if (view()->exists('emails.properties.new_property_alert')) {
-        return "SUCCESS: Laravel found the file!";
-    } else {
-        return "ERROR: Laravel cannot find the file. It is looking in: " . resource_path('views/emails/properties/new_property_alert.blade.php');
-    }
-}); 
-
-
 });
