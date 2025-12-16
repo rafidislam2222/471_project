@@ -1,12 +1,12 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\User;
 use App\Models\Property;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Notifications\SystemNotification;
-use App\Services\GmailService; // Import the service we created
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\NewPropertyNotification;
@@ -17,9 +17,7 @@ class PropertyWebController extends Controller
     public function index()
     {
         $ownerId = Auth::id();
-
         $properties = Property::where('owner_id', $ownerId)->get();
-
         return view('owner.properties.index', compact('properties'));
     }
 
@@ -30,8 +28,9 @@ class PropertyWebController extends Controller
     }
 
     // Save new property
-    public function store(Request $request,GmailService $gmail)
+    public function store(Request $request)
     {
+        // 1. Validate
         $request->validate([
             'title'        => 'required',
             'description'  => 'nullable',
@@ -39,11 +38,12 @@ class PropertyWebController extends Controller
             'address'      => 'required',
             'availability' => 'required|boolean',
             'owner_info'   => 'required',
-            'images.*'     => 'image|mimes:jpg,jpeg,png|max:2048'
+            'images'       => 'nullable|array',
+            'images.*'     => 'image|mimes:jpg,jpeg,png|max:102400' // 100MB limit
         ]);
 
+        // 2. Handle Images
         $images = [];
-
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $img) {
                 $name = time() . '_' . $img->getClientOriginalName();
@@ -52,27 +52,32 @@ class PropertyWebController extends Controller
             }
         }
 
-        $property=Property::create([
+        // 3. Create Property (ONLY ONCE)
+        $property = Property::create([
             'title'        => $request->title,
             'description'  => $request->description,
             'rent_price'   => $request->rent_price,
             'address'      => $request->address,
             'availability' => $request->availability,
             'owner_info'   => $request->owner_info,
-            'owner_id'     => Auth::id(),         //  Link property to the owner
+            'owner_id'     => Auth::id(),
             'images'       => json_encode($images)
         ]);
-                            //NOTIFICATIONS////
-    // A. Notify Admins (Bell Icon Only)
-    $admins = User::where('role', 'admin')->get();
-    if($admins->count() > 0) {
-        Notification::send($admins, new SystemNotification(
-            'New Property Listed: ' . $property->title . ' by ' . Auth::user()->name, 
-            url('/admin/properties')
-        ));
-    }
 
-        // B. Notify the Owner (Bell Icon Only)
+        // ====================================================
+        //                 NOTIFICATIONS
+        // ====================================================
+
+        // A. Notify Admins (Bell Icon)
+        $admins = User::where('role', 'admin')->get();
+        if ($admins->count() > 0) {
+            Notification::send($admins, new SystemNotification(
+                'New Property Listed: ' . $property->title . ' by ' . Auth::user()->name, 
+                url('/admin/properties')
+            ));
+        }
+
+        // B. Notify the Owner (Bell Icon)
         $user = Auth::user();
         $user->notify(new SystemNotification(
             'Success! Your property "' . $property->title . '" is now live.', 
@@ -83,23 +88,25 @@ class PropertyWebController extends Controller
         $allUsers = User::all();
 
         foreach ($allUsers as $targetUser) {
-    
-    // Filter: Don't email the person who posted it (optional)
+            // Filter: Don't email the person who posted it
             if ($targetUser->id != Auth::id()) {
-        
-        // 1. Send Bell Notification (Database)
+                
+                // 1. Bell Notification
                 $targetUser->notify(new SystemNotification(
                     'New Property Alert: ' . $property->title,
                     url('/properties/' . $property->id)
                 ));
 
-        // 2. Send Real Email (Using your Mailable Class)
-                // 2. Send Real Email - FORCE ERROR MODE
-                Mail::to($targetUser->email)->send(new NewPropertyNotification($property));
+                // 2. Send Real Email
+                try {
+                    Mail::to($targetUser->email)->send(new NewPropertyNotification($property));
+                } catch (\Exception $e) {
+                    \Log::error("Failed to email user {$targetUser->id}: " . $e->getMessage());
+                }
             }
         }
-// ====================================================
 
+        // 4. Final Return (After everything is done)
         return redirect('/owner/dashboard')->with('success', 'Property added and emails sent!');
     }
 

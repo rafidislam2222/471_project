@@ -5,20 +5,86 @@
     
 
     <style>
+        /* Page styling */
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2b6cb0;
+            margin-bottom: 20px;
+        }
+
+        a {
+            text-decoration: none;
+            color: #2b6cb0;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Add New Property link spacing */
+        a[href="/owner/properties/create"] {
+            display: inline-block;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        /* Success message */
+        p[style] {
+            font-weight: bold;
+        }
+
+        /* TABLE */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background: #e2e8f0;
+            padding: 12px;
+            font-size: 14px;
+            text-align: left;
+            border-bottom: 2px solid #cbd5e0;
+        }
+
+        td {
+            padding: 10px;
+            vertical-align: top;
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:hover td {
+            background: #f1f5f9;
+        }
+
+        /* Property images */
         img.property-img {
-            width: 120px;
-            height: 90px;
+            width: 200px;
+            height: 150px;
             object-fit: cover;
             margin: 5px;
             border-radius: 5px;
             border: 1px solid #ccc;
         }
 
-        td {
-            vertical-align: top;
+        /* Edit and delete links */
+        td a {
+            margin-right: 6px;
         }
     </style>
 </head>
+
 <body>
 
 <h1>My Properties</h1>

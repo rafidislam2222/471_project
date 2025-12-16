@@ -7,7 +7,6 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\PropertyWebController;
 use App\Http\Controllers\PropertyUserController;
 use App\Http\Controllers\ForgotPasswordController;
-use App\Services\GmailService;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,7 +14,6 @@ use App\Services\GmailService;
 |--------------------------------------------------------------------------
 */
 
-// Redirect homepage to login
 Route::get('/', function () {
     return redirect('/login'); 
 });
@@ -34,17 +32,12 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 
     // Forgot Password Routes
-    // 1. Show the "Enter Email" form
     Route::get('/forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
-    // 2. Handle the "Send OTP/Link" button click
     Route::post('/forgot-password-send-otp', [ForgotPasswordController::class, 'sendOtp'])->name('password.email');
-    // 3. Show the "Enter OTP & New Password" form
     Route::get('/reset-password', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
-    // 4. Handle the final "Change Password" button click
     Route::post('/reset-password-verify', [ForgotPasswordController::class, 'resetPassword'])->name('password.update');
 });
 
-// Logout
 Route::get('/logout', [AuthController::class, 'logout'])->middleware('auth');
 
 /*
@@ -54,7 +47,7 @@ Route::get('/logout', [AuthController::class, 'logout'])->middleware('auth');
 */
 
 Route::get('/admin/dashboard', function () {
-    return redirect('/admin/users'); // Redirects admin to user management
+    return redirect('/admin/users'); 
 })->middleware(['auth', 'admin']);
 
 Route::get('/owner/dashboard', function () {
@@ -67,18 +60,18 @@ Route::get('/user/dashboard', function () {
 
 /*
 |--------------------------------------------------------------------------
-| OWNER PROPERTY MANAGEMENT (WEB UI)
+| OWNER PROPERTY MANAGEMENT
 |--------------------------------------------------------------------------
 */
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/owner/properties', [PropertyWebController::class, 'index']);          // list
-    Route::get('/owner/properties/create', [PropertyWebController::class, 'create']); // form add
-    Route::post('/owner/properties', [PropertyWebController::class, 'store']);        // save new
+    Route::get('/owner/properties', [PropertyWebController::class, 'index']);          
+    Route::get('/owner/properties/create', [PropertyWebController::class, 'create']); 
+    Route::post('/owner/properties', [PropertyWebController::class, 'store']);        
 
-    Route::get('/owner/properties/{id}/edit', [PropertyWebController::class, 'edit']); // form edit
-    Route::post('/owner/properties/{id}/update', [PropertyWebController::class, 'update']); // update
-    Route::get('/owner/properties/{id}/delete', [PropertyWebController::class, 'destroy']); // delete
+    Route::get('/owner/properties/{id}/edit', [PropertyWebController::class, 'edit']); 
+    Route::post('/owner/properties/{id}/update', [PropertyWebController::class, 'update']); 
+    Route::get('/owner/properties/{id}/delete', [PropertyWebController::class, 'destroy']); 
 });
 
 /*
@@ -87,40 +80,24 @@ Route::middleware(['auth'])->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/properties', [PropertyUserController::class, 'index']);            // user list
-Route::get('/properties/{id}', [PropertyUserController::class, 'show']);        // user details
-Route::post('/properties/{id}/book', [PropertyUserController::class, 'book'])->middleware('auth'); // booking
+Route::get('/properties', [PropertyUserController::class, 'index']);            
+Route::get('/properties/{id}', [PropertyUserController::class, 'show']);        
+Route::post('/properties/{id}/book', [PropertyUserController::class, 'book'])->middleware('auth');
 
 /*
 |--------------------------------------------------------------------------
-| ADMIN ROUTES (Middleware: Auth + Admin)
+| ADMIN ROUTES
 |--------------------------------------------------------------------------
 */
 
 Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
+    Route::patch('/admin/users/{user}/role', [AdminUserController::class, 'updateRole'])->name('admin.users.updateRole');
+    Route::post('/admin/users/{user}/suspend', [AdminUserController::class, 'suspend'])->name('admin.users.suspend');
+    Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
+    Route::get('/admin/users/{user}/profile', [AdminUserController::class, 'showProfile'])->name('admin.users.profile');
 
-    // View all users
-    Route::get('/admin/users', [AdminUserController::class, 'index'])
-        ->name('admin.users.index');
-
-    // Update a user's role
-    Route::patch('/admin/users/{user}/role', [AdminUserController::class, 'updateRole'])
-        ->name('admin.users.updateRole');
-
-    // Suspend / unsuspend a user
-    Route::post('/admin/users/{user}/suspend', [AdminUserController::class, 'suspend'])
-        ->name('admin.users.suspend');
-
-    // Delete a user permanently
-    Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])
-        ->name('admin.users.destroy');
-        
-    // View a user's profile    
-    Route::get('/admin/users/{user}/profile', [AdminUserController::class, 'showProfile'])
-        ->name('admin.users.profile');
-
-
-    // Mark notifications as read
+    // Notifications
     Route::get('/notifications/mark-read', function () {
         auth()->user()->unreadNotifications->markAsRead();
         return back();
@@ -130,17 +107,4 @@ Route::middleware(['auth', 'admin'])->group(function () {
         auth()->user()->unreadNotifications->markAsRead();
         return back();
     })->name('markAsRead');
-});
-
-/*
-|--------------------------------------------------------------------------
-| GMAIL API ROUTES (Optional / Legacy)
-|--------------------------------------------------------------------------
-*/
-Route::get('/gmail/login', function (GmailService $gmail) {
-    return redirect($gmail->getLoginUrl());
-});
-Route::get('/gmail/callback', function (Request $request, GmailService $gmail) {
-    $gmail->saveToken($request->code);
-    return "Connected successfully! You can now send emails.";
 });
