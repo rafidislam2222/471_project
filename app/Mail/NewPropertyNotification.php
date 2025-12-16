@@ -7,14 +7,13 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use App\Models\Property; // Assuming your Property model is here
+use App\Models\Property;
 
 class NewPropertyNotification extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $property; // Public property to pass data to the view
-
+    public $property;
 
     public function __construct(Property $property)
     {
@@ -28,12 +27,14 @@ class NewPropertyNotification extends Mailable
         );
     }
 
+    // REMOVED: via() and toMail() - These do not belong here!
+
     public function content(): Content
     {
+        // This tells Laravel to look for the HTML design in resources/views/emails/properties/
         return new Content(
-            markdown: 'emails.properties.new_property_alert', // We will create this view next
-            // Pass the property variable to the view
-            with: ['property' => $this->property] 
+            markdown: 'email.properties.new_property_alart',
+            with: ['property' => $this->property]
         );
     }
 }

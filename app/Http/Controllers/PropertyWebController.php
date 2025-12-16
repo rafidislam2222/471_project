@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Notifications\SystemNotification;
 use App\Services\GmailService; // Import the service we created
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NewPropertyNotification;
 
 class PropertyWebController extends Controller
 {
@@ -61,55 +63,44 @@ class PropertyWebController extends Controller
             'images'       => json_encode($images)
         ]);
                             //NOTIFICATIONS////
+    // A. Notify Admins (Bell Icon Only)
+    $admins = User::where('role', 'admin')->get();
+    if($admins->count() > 0) {
+        Notification::send($admins, new SystemNotification(
+            'New Property Listed: ' . $property->title . ' by ' . Auth::user()->name, 
+            url('/admin/properties')
+        ));
+    }
 
-        // Notify Admins (Database Only)
-        $admins = User::where('role', 'admin')->get();
-        if($admins->count() > 0) {
-            Notification::send($admins, new SystemNotification(
-                'New Property Listed: ' . $property->title . ' by ' . Auth::user()->name, 
-                url('/admin/properties')
-            ));
-        }
-
-        // Notify the Owner (Confirmation - Database Only)
+        // B. Notify the Owner (Bell Icon Only)
         $user = Auth::user();
         $user->notify(new SystemNotification(
             'Success! Your property "' . $property->title . '" is now live.', 
             url('/owner/properties')
         ));
 
-        // NOTIFY ALL TENANTS (Gmail API + Bell Icon)
-        if (!$gmail->connect()) {
-            \Log::error('Gmail API Token Expired. Emails not sent.');
-        }
-
+        // C. NOTIFY ALL USERS (EMAIL + BELL)
         $allUsers = User::all();
 
         foreach ($allUsers as $targetUser) {
-            // Don't spam the owner or the admins again (optional filter)
-            if ($targetUser->id != Auth::id() && $targetUser->role != 'admin') {
-                
-                // 1. Bell Icon
+    
+    // Filter: Don't email the person who posted it (optional)
+            if ($targetUser->id != Auth::id()) {
+        
+        // 1. Send Bell Notification (Database)
                 $targetUser->notify(new SystemNotification(
                     'New Property Alert: ' . $property->title,
                     url('/properties/' . $property->id)
                 ));
 
-                // 2. Gmail API
-                try {
-                    $gmail->sendEmail(
-                        $targetUser->email,
-                        'New Property Alert: ' . $property->title,
-                        "A new property is available at " . $property->address . ". \n\nCheck it out here: " . url('/properties/' . $property->id)
-                    );
-                } catch (\Exception $e) {
-                    \Log::error("Failed to email user {$targetUser->id}: " . $e->getMessage());
-                }
+        // 2. Send Real Email (Using your Mailable Class)
+                // 2. Send Real Email - FORCE ERROR MODE
+                Mail::to($targetUser->email)->send(new NewPropertyNotification($property));
             }
         }
-        // ====================================================
+// ====================================================
 
-        return redirect('/owner/dashboard')->with('success', 'Property added and notifications sent!');
+        return redirect('/owner/dashboard')->with('success', 'Property added and emails sent!');
     }
 
     // Show edit form

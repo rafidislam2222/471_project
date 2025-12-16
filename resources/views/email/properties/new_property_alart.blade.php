@@ -1,14 +1,15 @@
-
 <x-mail::message>
-# New Property Added!
+# New Property Alert!
 
-A new property has been added to the system and is now available for viewing.
+A new property has just been listed: **{{ $property->title }}**
 
-**Property Title:** {{ $property->title }}
-**Location:** {{ $property->location }}
-**Price:** ${{ number_format($property->price) }}
+## Rent: ${{ number_format($property->rent_price) }}
 
-<x-mail::button :url="url('/properties/'.$property->id)">
+**Address:** {{ $property->address }}
+
+{{ Str::limit($property->description, 100) }}
+
+<x-mail::button :url="url('/properties/' . $property->id)">
 View Property Details
 </x-mail::button>
 

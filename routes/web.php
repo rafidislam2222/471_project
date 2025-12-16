@@ -133,5 +133,15 @@ Route::get('/test-gmail-api', function (App\Services\GmailService $gmail) {
         return "SUCCESS: Email sent!";
     } catch (\Exception $e) {
         return "FAILED: " . $e->getMessage();
+
     }
+Route::get('/debug-view', function () {
+    if (view()->exists('emails.properties.new_property_alert')) {
+        return "SUCCESS: Laravel found the file!";
+    } else {
+        return "ERROR: Laravel cannot find the file. It is looking in: " . resource_path('views/emails/properties/new_property_alert.blade.php');
+    }
+}); 
+
+
 });
