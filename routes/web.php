@@ -103,10 +103,19 @@ Route::middleware(['auth'])->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'admin'])->group(function () {
+
+    // 1. ADD THIS MISSING ROUTE (Fixes the 500 Crash)
+    Route::get('/mark-as-read', function () {
+        auth()->user()->unreadNotifications->markAsRead();
+        return response()->json(['success' => true]);
+    })->name('markAsRead');
+
+    // 2. Dashboard Redirection
     Route::get('/admin/dashboard', function () {
         return redirect('/admin/users'); 
     });
 
+    // 3. User Management Routes
     Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
     Route::patch('/admin/users/{user}/role', [AdminUserController::class, 'updateRole'])->name('admin.users.updateRole');
     Route::post('/admin/users/{user}/suspend', [AdminUserController::class, 'suspend'])->name('admin.users.suspend');
