@@ -108,4 +108,34 @@ class PropertyUserController extends Controller
 
         return back()->with('success', 'Property booked! Confirmation sent to your email.');
     }
+
+    // --- NEW: 4. Show User's Booked Properties ---
+    public function myBookings()
+    {
+        // Get bookings for the logged-in user with Property details
+        $bookings = Booking::where('user_id', Auth::id())->with('property')->get();
+        
+        return view('properties.my-bookings', compact('bookings'));
+    }
+
+    // --- NEW: 5. Cancel Booking (Update Status) ---
+    public function cancelBooking($id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        // Security: Make sure the logged-in user owns this booking
+        if ($booking->user_id != Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // 1. Find the property and make it AVAILABLE again
+        $property = $booking->property;
+        $property->availability = 1; // 1 = Available
+        $property->save();
+
+        // 2. Delete the booking
+        $booking->delete();
+
+        return back()->with('success', 'Booking cancelled. The property is available again.');
+    }
 }

@@ -1,13 +1,13 @@
 <?php
-
-use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\PropertyWebController;
 use App\Http\Controllers\PropertyUserController;
 use App\Http\Controllers\ForgotPasswordController;
-
+use App\Http\Controllers\NotificationController;
 /*
 |--------------------------------------------------------------------------
 | General Routes
@@ -18,6 +18,21 @@ Route::get('/', function () {
     return redirect('/login'); 
 });
 
+Route::post('/logout', function (Request $request) {
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect('/login');
+})->name('logout');
+
+
+// 1. Show the Register Page
+Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+
+// 2. Handle the Registration Logic
+Route::post('/register', [AuthController::class, 'register']);
+
+
 /*
 |--------------------------------------------------------------------------
 | Authentication Routes (Guest)
@@ -26,8 +41,13 @@ Route::get('/', function () {
 
 Route::middleware('guest')->group(function () {
     // Login & Register
-    Route::get('/register', [AuthController::class, 'showRegister']);
+    // Login & Register
+    // 1. Add ->name('register') to the GET route so the "Create Account" link works
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    
+    // 2. The POST route handles the form submit (URL is the same, so it's fine)
     Route::post('/register', [AuthController::class, 'register']);
+
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
 
@@ -107,6 +127,25 @@ Route::middleware(['auth', 'admin'])->group(function () {
         auth()->user()->unreadNotifications->markAsRead();
         return back();
     })->name('markAsRead');
+
+
+
+    Route::middleware(['auth'])->group(function () {
+        // Dashboard
+        Route::get('/dashboard', function () { return view('dashboard.user'); });
+    
+        // Properties
+        Route::get('/properties', [PropertyUserController::class, 'index'])->name('properties.index');
+        Route::get('/properties/{id}', [PropertyUserController::class, 'show'])->name('properties.show');
+        Route::post('/properties/{id}/book', [PropertyUserController::class, 'book'])->name('properties.book');
+    
+        // My Bookings & Cancellation
+        Route::get('/my-bookings', [PropertyUserController::class, 'myBookings'])->name('my-bookings');
+        Route::delete('/bookings/{id}', [PropertyUserController::class, 'cancelBooking'])->name('bookings.cancel');
+    
+        // Notifications
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    });
 
 
 
