@@ -11,10 +11,26 @@ use Illuminate\Support\Facades\Http;
 class PropertyUserController extends Controller
 {
     // Show all properties (available + booked)
-    public function index()
+    public function index(Request $request)
     {
-        // Show every property, regardless of availability
-        $properties = Property::all();
+        $query = Property::query();
+
+        // Filter by location
+        if ($request->filled('address')) {
+            $query->where('address', 'like', '%' . $request->address . '%');
+        }
+
+        // Filter by minimum price
+        if ($request->filled('min_price')) {
+            $query->where('rent_price', '>=', $request->min_price);
+        }
+
+        // Filter by maximum price
+        if ($request->filled('max_price')) {
+            $query->where('rent_price', '<=', $request->max_price);
+        }
+
+        $properties = $query->get();
 
         return view('properties.index', compact('properties'));
     }
@@ -80,5 +96,15 @@ class PropertyUserController extends Controller
         $property->save();
 
         return back()->with('success', 'Property booked successfully!');
+    }
+
+    // Show current user's bookings
+    public function myBookings()
+    {
+        $bookings = Booking::with('property')
+            ->where('user_id', Auth::id())
+            ->get();
+
+        return view('dashboard.bookings', compact('bookings'));
     }
 }

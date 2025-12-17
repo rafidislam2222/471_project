@@ -36,6 +36,9 @@ Route::get('/user/dashboard', function () {
     return view('dashboard.user');
 });
 
+Route::get('/user/bookings', [PropertyUserController::class, 'myBookings'])
+    ->middleware('auth');
+
 /*
 | OWNER PROPERTY MANAGEMENT (WEB UI)
 */

@@ -7,6 +7,12 @@
 
 <h1>Available Properties</h1>
 
+<a href="/user/dashboard"
+   style="display:inline-block; margin-bottom:15px; padding:8px 14px; 
+          background:#444; color:white; text-decoration:none; border-radius:5px;">
+    ⬅ Back to Dashboard
+</a>
+
 @if(session('success'))
     <p style="color: green">{{ session('success') }}</p>
 @endif
@@ -14,6 +20,28 @@
 @if(session('error'))
     <p style="color: red">{{ session('error') }}</p>
 @endif
+
+<h2>Search Properties</h2>
+
+<form method="GET" action="/properties">
+    <label>Location:</label>
+    <input type="text" name="address" value="{{ request('address') }}">
+
+    <label>Min Price:</label>
+    <input type="number" name="min_price" value="{{ request('min_price') }}">
+
+    <label>Max Price:</label>
+    <input type="number" name="max_price" value="{{ request('max_price') }}">
+
+    <button type="submit">Search</button>
+     <!-- RESET BUTTON -->
+    <a href="/properties"
+       style="padding:6px 10px; background:#ccc; color:black; text-decoration:none; margin-left:10px;">
+        Reset
+    </a>
+</form>
+
+<hr>
 
 <table border="1" cellpadding="10">
     <tr>
@@ -40,7 +68,7 @@
             @if(!empty($images))
                 @foreach($images as $img)
                     <img src="{{ asset('storage/property_images/'.$img) }}"
-                        width="80" height="80"
+                        width="250" height="200"
                         style="object-fit:cover; margin-right:5px;">
                 @endforeach
             @else

@@ -20,7 +20,7 @@
     @if(count($images) > 0)
         @foreach($images as $img)
             <img src="{{ asset('storage/property_images/' . $img) }}"
-                 width="150" height="150"
+                 width="200" height="200"
                  style="object-fit:cover; margin-right:10px;">
         @endforeach
     @else
