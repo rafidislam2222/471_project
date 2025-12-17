@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+// Import all your Controllers
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\PropertyWebController;
@@ -20,6 +22,7 @@ Route::get('/', function () {
     return redirect('/login'); 
 });
 
+// LOGOUT (Must be named 'logout' for your Blade files to work)
 Route::post('/logout', function (Request $request) {
     Auth::logout();
     $request->session()->invalidate();
@@ -29,15 +32,18 @@ Route::post('/logout', function (Request $request) {
 
 /*
 |--------------------------------------------------------------------------
-| Guest Routes (Login/Register)
+| Guest Routes (Login & Register)
 |--------------------------------------------------------------------------
 */
 Route::middleware('guest')->group(function () {
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    // Login
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
-    
+
+    // Register
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
+
     // Forgot Password
     Route::get('/forgot-password', [ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
     Route::post('/forgot-password-send-otp', [ForgotPasswordController::class, 'sendOtp'])->name('password.email');
@@ -50,10 +56,9 @@ Route::middleware('guest')->group(function () {
 | Authenticated User Routes (Tenants/Owners)
 |--------------------------------------------------------------------------
 */
-// MOVED OUTSIDE OF ADMIN GROUP
 Route::middleware(['auth'])->group(function () {
     
-    // Dashboard Logic
+    // Redirect logic for "/dashboard"
     Route::get('/dashboard', function () {
         $user = Auth::user();
         if ($user->role == 'admin') return redirect('/admin/users');
@@ -61,16 +66,19 @@ Route::middleware(['auth'])->group(function () {
         return redirect('/user/dashboard');
     });
 
-    // Specific Dashboards
+    // View Dashboards
     Route::get('/user/dashboard', function () {
-        return view('dashboard.user'); // Make sure resources/views/dashboard/user.blade.php exists!
+        return view('dashboard.user'); 
     })->name('user.dashboard');
 
     Route::get('/owner/dashboard', function () {
         return view('dashboard.owner');
     })->name('owner.dashboard');
 
-    // Properties
+    // Notifications View
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    
+    // Properties (Viewing & Booking)
     Route::get('/properties', [PropertyUserController::class, 'index'])->name('properties.index');
     Route::get('/properties/{id}', [PropertyUserController::class, 'show'])->name('properties.show');
     Route::post('/properties/{id}/book', [PropertyUserController::class, 'book'])->name('properties.book');
@@ -78,14 +86,11 @@ Route::middleware(['auth'])->group(function () {
     // My Bookings
     Route::get('/my-bookings', [PropertyUserController::class, 'myBookings'])->name('my-bookings');
     Route::delete('/bookings/{id}', [PropertyUserController::class, 'cancelBooking'])->name('bookings.cancel');
-
-    // Notifications
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
 });
 
 /*
 |--------------------------------------------------------------------------
-| Owner Property Management
+| OWNER Routes (Property Management)
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->group(function () {
@@ -99,23 +104,24 @@ Route::middleware(['auth'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Admin Routes (Strictly Admin Only)
+| ADMIN Routes (Strictly Admin Only)
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'admin'])->group(function () {
 
-    // 1. ADD THIS MISSING ROUTE (Fixes the 500 Crash)
+    // *** THIS IS THE CRITICAL FIX FOR THE 500 ERROR ***
+    // Your index.blade.php calls route('markAsRead'), so this MUST exist here.
     Route::get('/mark-as-read', function () {
         auth()->user()->unreadNotifications->markAsRead();
         return response()->json(['success' => true]);
     })->name('markAsRead');
 
-    // 2. Dashboard Redirection
+    // Admin Dashboard Redirect
     Route::get('/admin/dashboard', function () {
         return redirect('/admin/users'); 
     });
 
-    // 3. User Management Routes
+    // User Management
     Route::get('/admin/users', [AdminUserController::class, 'index'])->name('admin.users.index');
     Route::patch('/admin/users/{user}/role', [AdminUserController::class, 'updateRole'])->name('admin.users.updateRole');
     Route::post('/admin/users/{user}/suspend', [AdminUserController::class, 'suspend'])->name('admin.users.suspend');
