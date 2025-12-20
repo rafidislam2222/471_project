@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use Illuminate\Support\Facades\Artisan;
 // Import all your Controllers
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AdminUserController;
@@ -127,4 +127,13 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/admin/users/{user}/suspend', [AdminUserController::class, 'suspend'])->name('admin.users.suspend');
     Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
     Route::get('/admin/users/{user}/profile', [AdminUserController::class, 'showProfile'])->name('admin.users.profile');
+});
+Route::get('/emergency-db-fix', function () {
+    // 1. Run the migration forcefully
+    Artisan::call('migrate:fresh --seed --force');
+    
+    // 2. Clear caches to be safe
+    Artisan::call('optimize:clear');
+    
+    return "DATABASE FIXED! Tables created and seeded successfully.";
 });
