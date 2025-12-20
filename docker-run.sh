@@ -10,6 +10,11 @@ php artisan view:cache
 echo "Running migrations..."
 php artisan migrate --force
 
-# 3. Start Apache
+# 3. FIX PERMISSIONS (This fixes the "Permission Denied" crash)
+# We run this AFTER the artisan commands to fix any files they created (like laravel.log)
+echo "Fixing permissions..."
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# 4. Start Apache
 echo "Starting Apache..."
 apache2-foreground
