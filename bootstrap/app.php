@@ -11,8 +11,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // --- ADD THIS LINE TO FIX LOGIN/REGISTER ON RENDER ---
+        
+        // 1. Trust proxies for Render/Cloud (Required for your hosting)
         $middleware->trustProxies(at: '*'); 
+
+        // 2. REGISTER THE ADMIN ALIAS HERE
+        // This connects the word 'admin' in web.php to your actual AdminMiddleware file
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
+        ]);
+        
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
