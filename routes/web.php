@@ -23,7 +23,7 @@ Route::get('/', function () {
 });
 
 // LOGOUT (Must be named 'logout' for your Blade files to work)
-Route::post('/logout', function (Request $request) {
+Route::any('/logout', function (Request $request) {
     Auth::logout();
     $request->session()->invalidate();
     $request->session()->regenerateToken();
