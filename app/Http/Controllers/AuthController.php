@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\User;
+use Illuminate\Http\Request; //handel Frontend requests
+use App\Models\User; //Database Connection
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Auth; //Login/Logout with roles
 
 class AuthController extends Controller
 {
@@ -23,6 +23,23 @@ class AuthController extends Controller
             'password' => 'required',
             'role'     => 'required|in:user,owner,admin'
         ]);
+
+
+        ////////Add superkey validation for admin role////////////////////////
+        $role=$request->role;
+        if ($role === 'admin') {
+            $superKeyFromForm = $request->input('super_key');
+            $expectedKey      = config('app.super_admin_key');
+
+            if (!$expectedKey || $superKeyFromForm !== $expectedKey) {
+                return back()
+                    ->withErrors([
+                        'super_key' => 'Invalid or missing super key for admin registration.'
+                    ])
+                    ->withInput();
+            }
+        }
+
 
         User::create([
             'name'     => $request->name,
@@ -48,10 +65,24 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
+//suspend if  the user is suspended not logged in//////
+        if ($user->status == 'suspended') {
+            $now = now();
+            if ($user->suspended_until && $now->lessThan($user->suspended_until)) {
+                $suspendUntil = $user->suspended_until->toDateTimeString();
+                Auth::logout();
+                return back()->with('error', "Your account is suspended until {$suspendUntil}.");
+            } else {
+                // Lift suspension
+                $user->status = 'active';
+                $user->suspended_until = null;
+                $user->save();
+            }
+        }
 
         // Redirect based on role
         if ($user->role == 'admin') {
-            return redirect('/admin/dashboard');
+            return redirect('/admin/users');
         }
         if ($user->role == 'owner') {
             return redirect('/owner/dashboard');
