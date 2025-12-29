@@ -13,10 +13,25 @@ use App\Services\GmailService;
 class PropertyUserController extends Controller
 {
     // Show all properties (available + booked)
-    public function index()
+    public function index(Request $request)
     {
-        // Show every property, regardless of availability
-        $properties = Property::all();
+        // Apply optional search filters from query string
+        $query = Property::query();
+
+        if ($request->filled('address')) {
+            $address = $request->input('address');
+            $query->where('address', 'like', "%{$address}%");
+        }
+
+        if ($request->filled('min_price')) {
+            $query->where('rent_price', '>=', $request->input('min_price'));
+        }
+
+        if ($request->filled('max_price')) {
+            $query->where('rent_price', '<=', $request->input('max_price'));
+        }
+
+        $properties = $query->get();
 
         return view('properties.index', compact('properties'));
     }
