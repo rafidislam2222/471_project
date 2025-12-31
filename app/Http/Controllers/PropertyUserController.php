@@ -7,8 +7,9 @@ use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail; // <--- ADDED THIS
 use App\Notifications\SystemNotification;
-use App\Services\GmailService;
+// use App\Services\GmailService;    <--- REMOVED THIS
 
 class PropertyUserController extends Controller
 {
@@ -71,8 +72,9 @@ class PropertyUserController extends Controller
         return view('properties.show', compact('property', 'weather'));
     }
 
-    // 3. Book a property (With Gmail API + Notification)
-    public function book(Request $request, $id, GmailService $gmail)
+    // 3. Book a property (Refactored to use Standard Mail)
+    // Note: Removed 'GmailService $gmail' from arguments
+    public function book(Request $request, $id)
     {
         $property = Property::findOrFail($id);
 
@@ -104,20 +106,22 @@ class PropertyUserController extends Controller
             url('/properties/' . $property->id)
         ));
 
-        // B. Gmail API Email
-        if ($gmail->connect()) {
-            try {
-                $gmail->sendEmail(
-                    $user->email,
-                    'Booking Confirmation: ' . $property->title,
-                    "Dear " . $user->name . ",\n\n" .
-                    "Your booking for " . $property->title . " has been confirmed.\n" .
-                    "Start Date: " . $request->start_date . "\n\n" .
-                    "Thank you for using our service!"
-                );
-            } catch (\Exception $e) {
-                \Log::error('Booking email failed: ' . $e->getMessage());
-            }
+        // B. Standard Email (Replaces GmailService)
+        try {
+            $emailSubject = 'Booking Confirmation: ' . $property->title;
+            $emailBody = "Dear " . $user->name . ",\n\n" .
+                         "Your booking for " . $property->title . " has been confirmed.\n" .
+                         "Start Date: " . $request->start_date . "\n\n" .
+                         "Thank you for using our service!";
+
+            Mail::raw($emailBody, function ($message) use ($user, $emailSubject) {
+                $message->to($user->email)
+                        ->subject($emailSubject);
+            });
+
+        } catch (\Exception $e) {
+            // Log the error but don't crash the user's page
+            \Log::error('Booking email failed: ' . $e->getMessage());
         }
         // --- NOTIFICATIONS END ---
 
