@@ -81,6 +81,13 @@ Route::middleware(['auth'])->group(function () {
     // Notifications View
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     
+    // --- FIX: ADDED MISSING ROUTE HERE ---
+    Route::get('/notifications/mark-read', function () {
+        auth()->user()->unreadNotifications->markAsRead();
+        return back();
+    })->name('notifications.read');
+    // -------------------------------------
+
     // Properties (Viewing & Booking)
     Route::get('/properties', [PropertyUserController::class, 'index'])->name('properties.index');
     Route::get('/properties/{id}', [PropertyUserController::class, 'show'])->name('properties.show');
@@ -112,8 +119,6 @@ Route::middleware(['auth'])->group(function () {
 */
 Route::middleware(['auth', 'admin'])->group(function () {
 
-    // *** THIS IS THE CRITICAL FIX FOR THE 500 ERROR ***
-    // Your index.blade.php calls route('markAsRead'), so this MUST exist here.
     Route::get('/mark-as-read', function () {
         auth()->user()->unreadNotifications->markAsRead();
         return response()->json(['success' => true]);
@@ -131,6 +136,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
     Route::get('/admin/users/{user}/profile', [AdminUserController::class, 'showProfile'])->name('admin.users.profile');
 });
+
 Route::get('/emergency-db-fix', function () {
     // 1. Run the migration forcefully
     Artisan::call('migrate:fresh --seed --force');
